@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Serpent</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #333;
+        }
+        canvas {
+            background-color: #222;
+            border: 1px solid #fff;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        const scale = 20;
+        const rows = canvas.height / scale;
+        const columns = canvas.width / scale;
+
+        let snake;
+        let apple;
+        let score;
+
+        (function setup() {
+            snake = new Snake();
+            apple = new Apple();
+            score = 0;
+
+            window.addEventListener("keydown", e => {
+                const direction = e.key.replace('Arrow', '').toLowerCase();
+                snake.changeDirection(direction);
+            });
+
+            window.setInterval(update, 100);
+        })();
+
+        function update() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            snake.move();
+            snake.draw();
+            apple.draw();
+
+            if (snake.eat(apple)) {
+                apple = new Apple();
+                score++;
+            }
+
+            if (snake.checkCollision()) {
+                alert("Game Over! Score: " + score);
+                snake = new Snake();
+                apple = new Apple();
+                score = 0;
+            }
+
+            drawScore();
+        }
+
+        function drawScore() {
+            ctx.fillStyle = "white";
+            ctx.font = "20px Arial";
+            ctx.fillText("Score: " + score, canvas.width - 100, 30);
+        }
+
+        class Snake {
+            constructor() {
+                this.body = [{x: 5, y: 5}];
+                this.direction = "right";
+                this.newDirection = "right";
+            }
+
+            draw() {
+                ctx.fillStyle = "green";
+                this.body.forEach(segment => {
+                    ctx.fillRect(segment.x * scale, segment.y * scale, scale, scale);
+                });
+            }
+
+            move() {
+                const head = { ...this.body[0] };
+                this.direction = this.newDirection;
+
+                if (this.direction === "right") head.x++;
+                if (this.direction === "left") head.x--;
+                if (this.direction === "up") head.y--;
+                if (this.direction === "down") head.y++;
+
+                this.body.unshift(head);
+                this.body.pop();
+            }
+
+            changeDirection(direction) {
+                if (direction === "up" && this.direction !== "down") this.newDirection = "up";
+                if (direction === "down" && this.direction !== "up") this.newDirection = "down";
+                if (direction === "left" && this.direction !== "right") this.newDirection = "left";
+                if (direction === "right" && this.direction !== "left") this.newDirection = "right";
+            }
+
+            eat(apple) {
+                const head = this.body[0];
+                return head.x === apple.x && head.y === apple.y;
+            }
+
+            checkCollision() {
+                const head = this.body[0];
+
+                if (head.x < 0 || head.y < 0 || head.x >= columns || head.y >= rows) {
+                    return true;
+                }
+
+                for (let i = 1; i < this.body.length; i++) {
+                    if (head.x === this.body[i].x && head.y === this.body[i].y) {
+                        return true;
+                    }
+                }
+
+                return false;
+            }
+        }
+
+        class Apple {
+            constructor() {
+                this.x = Math.floor(Math.random() * columns);
+                this.y = Math.floor(Math.random() * rows);
+            }
+
+            draw() {
+                ctx.fillStyle = "red";
+                ctx.fillRect(this.x * scale, this.y * scale, scale, scale);
+            }
+        }
+    </script>
+</body>
+</html>
